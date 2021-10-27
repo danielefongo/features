@@ -5,21 +5,21 @@ defmodule FeaturesTest do
   describe "simple macro" do
     test "check enabled feature" do
       assert true ==
-               (feature :feature_x do
+               (feature :enabled_feature do
                   true
                 end)
     end
 
     test "check not enabled feature" do
       assert true ==
-               (no_feature :feature_y do
+               (no_feature :not_enabled_feature do
                   true
                 end)
     end
 
     test "not enabled feature generate nil code" do
       assert nil ==
-               (feature :feature_y do
+               (feature :not_enabled_feature do
                   :should_not_return_this
                 end)
     end
@@ -30,7 +30,7 @@ defmodule FeaturesTest do
       defmodule FunctionFeatureOn do
         use Features
 
-        @feature :feature_x
+        @feature :enabled_feature
         def hello, do: :hello
       end
 
@@ -41,7 +41,7 @@ defmodule FeaturesTest do
       defmodule FunctionFeatureOff do
         use Features
 
-        @feature_off :feature_y
+        @feature_off :not_enabled_feature
         def hello, do: :hello
       end
 
@@ -52,7 +52,7 @@ defmodule FeaturesTest do
       defmodule FunctionFeatureOnForUndefniedFeature do
         use Features
 
-        @feature :feature_y
+        @feature :not_enabled_feature
         def hello, do: :hello
       end
 
@@ -63,7 +63,7 @@ defmodule FeaturesTest do
       defmodule FunctionFeatureOffForDefinedFeature do
         use Features
 
-        @feature_off :feature_x
+        @feature_off :enabled_feature
         def hello, do: :hello
       end
 
@@ -74,7 +74,7 @@ defmodule FeaturesTest do
       defmodule FunctionFeatureOffNotPropagated do
         use Features
 
-        @feature_off :feature_x
+        @feature_off :enabled_feature
         def hello, do: :hello
 
         def present?, do: true
@@ -90,7 +90,7 @@ defmodule FeaturesTest do
         use Features
 
         def hello do
-          @feature :feature_x
+          @feature :enabled_feature
           :ok
         end
       end
@@ -103,7 +103,7 @@ defmodule FeaturesTest do
         use Features
 
         def hello do
-          @feature_off :feature_y
+          @feature_off :not_enabled_feature
           :ok
         end
       end
@@ -116,7 +116,7 @@ defmodule FeaturesTest do
         use Features
 
         def hello do
-          @feature :feature_y
+          @feature :not_enabled_feature
           :ok
         end
       end
@@ -129,7 +129,7 @@ defmodule FeaturesTest do
         use Features
 
         def hello do
-          @feature_off :feature_x
+          @feature_off :enabled_feature
           :ok
         end
       end
@@ -145,7 +145,7 @@ defmodule FeaturesTest do
           if true do
             if true do
               if true do
-                @feature :feature_x
+                @feature :enabled_feature
                 :ok
               end
             end
@@ -161,7 +161,7 @@ defmodule FeaturesTest do
         use Features
 
         def hello do
-          @feature :feature_x
+          @feature :enabled_feature
           if true do
             if true do
               if true do
@@ -180,9 +180,9 @@ defmodule FeaturesTest do
         use Features
 
         def hello do
-          @feature_off :feature_x
+          @feature_off :enabled_feature
           :off
-          @feature :feature_x
+          @feature :enabled_feature
           :on
         end
       end
@@ -195,7 +195,7 @@ defmodule FeaturesTest do
         use Features
 
         def hello do
-          @feature :feature_x
+          @feature :enabled_feature
           :something
 
           :ok
