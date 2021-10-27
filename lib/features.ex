@@ -3,6 +3,7 @@ defmodule Features do
 
   import Kernel, except: [def: 2]
   @enabled_features Application.compile_env!(:features, :features)
+  @trash_stuff_tag :__features_trash_stuff
 
   defmacro __using__(_) do
     quote do
@@ -46,30 +47,31 @@ defmodule Features do
   end
 
   Kernel.def update_body(body) do
-    {new_body, _} =
-      Macro.prewalk(body, nil, fn node, acc ->
-        case {node, acc} do
-          {{:@, _, [{:feature, _, [feature]}]}, nil} ->
-            {nil, {:has, feature}}
+    body
+    |> Macro.prewalk(nil, fn node, acc ->
+      case {node, acc} do
+        {{:@, _, [{:feature, _, [feature]}]}, nil} ->
+          {@trash_stuff_tag, {:has, feature}}
 
-          {{:@, _, [{:feature_off, _, [feature]}]}, nil} ->
-            {nil, {:has_no, feature}}
+        {{:@, _, [{:feature_off, _, [feature]}]}, nil} ->
+          {@trash_stuff_tag, {:has_no, feature}}
 
-          {node, {:has, feature}} ->
-            {if feature in @enabled_features do
-               node
-             end, nil}
+        {node, {:has, feature}} ->
+          {if(feature in @enabled_features, do: node, else: @trash_stuff_tag), nil}
 
-          {node, {:has_no, feature}} ->
-            {if feature not in @enabled_features do
-               node
-             end, nil}
+        {node, {:has_no, feature}} ->
+          {if(feature not in @enabled_features, do: node, else: @trash_stuff_tag), nil}
 
-          _ ->
-            {node, nil}
-        end
-      end)
-
-    new_body
+        _ ->
+          {node, nil}
+      end
+    end)
+    |> elem(0)
+    |> Macro.postwalk(fn node ->
+      case node do
+        {:__block__, _, block} -> {:__block__, [], Enum.filter(block, &(&1 != @trash_stuff_tag))}
+        node -> node
+      end
+    end)
   end
 end

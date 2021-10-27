@@ -75,6 +75,21 @@ defmodule FeaturesTest do
       assert BlockFeatureOnForEnabledFeature.hello() == :ok
     end
 
+    test "feature on for enabled feature with complex data" do
+      defmodule BlockFeatureOnForEnabledFeatureWithComplexData do
+        use Features
+
+        def hello do
+          @feature_off :enabled_feature
+          {:error, :require_code}
+          @feature :enabled_feature
+          {:ok, %{data: [1, 2, 3]}}
+        end
+      end
+
+      assert BlockFeatureOnForEnabledFeatureWithComplexData.hello() == {:ok, %{data: [1, 2, 3]}}
+    end
+
     test "feature off for not enabled feature" do
       defmodule BlockFeatureOffForNotEnabledFeature do
         use Features
@@ -150,6 +165,20 @@ defmodule FeaturesTest do
       end
 
       assert BlockAnnotationForDeepBlock.hello() == :ok
+    end
+
+    test "feature off at the end" do
+      defmodule BlockFeatureOffAtTheEnd do
+        use Features
+
+        def hello do
+          :on
+          @feature_off :enabled_feature
+          :off
+        end
+      end
+
+      assert BlockFeatureOffAtTheEnd.hello() == :on
     end
 
     test "feature off and feature on" do
