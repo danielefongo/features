@@ -10,7 +10,7 @@ defmodule Features do
     end
   end
 
-  defmacro feature({:no, feature}, do: rest) do
+  defmacro no_feature(feature, do: rest) do
     quote do
       if unquote(feature) not in @enabled_features do
         unquote(rest)

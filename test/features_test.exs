@@ -11,7 +11,7 @@ defmodule FeaturesTest do
 
   test "check not enabled feature" do
     assert true ==
-             (feature {:no, :feature_y} do
+             (no_feature :feature_y do
                 true
               end)
   end
