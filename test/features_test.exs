@@ -2,29 +2,6 @@ defmodule FeaturesTest do
   use ExUnit.Case
   use Features
 
-  describe "simple macro" do
-    test "check enabled feature" do
-      assert true ==
-               (feature :enabled_feature do
-                  true
-                end)
-    end
-
-    test "check not enabled feature" do
-      assert true ==
-               (no_feature :not_enabled_feature do
-                  true
-                end)
-    end
-
-    test "not enabled feature generate nil code" do
-      assert nil ==
-               (feature :not_enabled_feature do
-                  :should_not_return_this
-                end)
-    end
-  end
-
   describe "function annotation" do
     test "feature on" do
       defmodule FunctionFeatureOn do
@@ -48,26 +25,26 @@ defmodule FeaturesTest do
       assert FunctionFeatureOff.hello() == :hello
     end
 
-    test "feature on for undefined feature" do
-      defmodule FunctionFeatureOnForUndefniedFeature do
+    test "feature on for not enabled feature" do
+      defmodule FunctionFeatureOnForNotEnabledFeature do
         use Features
 
         @feature :not_enabled_feature
         def hello, do: :hello
       end
 
-      assert_raise UndefinedFunctionError, fn -> FunctionFeatureOnForUndefniedFeature.hello() end
+      assert_raise UndefinedFunctionError, fn -> FunctionFeatureOnForNotEnabledFeature.hello() end
     end
 
-    test "feature off for defined feature" do
-      defmodule FunctionFeatureOffForDefinedFeature do
+    test "feature off for enabled feature" do
+      defmodule FunctionFeatureOffForEnabledFeature do
         use Features
 
         @feature_off :enabled_feature
         def hello, do: :hello
       end
 
-      assert_raise UndefinedFunctionError, fn -> FunctionFeatureOffForDefinedFeature.hello() end
+      assert_raise UndefinedFunctionError, fn -> FunctionFeatureOffForEnabledFeature.hello() end
     end
 
     test "feature off not propagated" do
@@ -85,8 +62,8 @@ defmodule FeaturesTest do
   end
 
   describe "block annotation" do
-    test "feature on" do
-      defmodule BlockFeatureOn do
+    test "feature on for enabled feature" do
+      defmodule BlockFeatureOnForEnabledFeature do
         use Features
 
         def hello do
@@ -95,11 +72,11 @@ defmodule FeaturesTest do
         end
       end
 
-      assert BlockFeatureOn.hello() == :ok
+      assert BlockFeatureOnForEnabledFeature.hello() == :ok
     end
 
-    test "feature off" do
-      defmodule BlockFeatureOff do
+    test "feature off for not enabled feature" do
+      defmodule BlockFeatureOffForNotEnabledFeature do
         use Features
 
         def hello do
@@ -108,11 +85,11 @@ defmodule FeaturesTest do
         end
       end
 
-      assert BlockFeatureOff.hello() == :ok
+      assert BlockFeatureOffForNotEnabledFeature.hello() == :ok
     end
 
-    test "feature on not defined" do
-      defmodule BlockFeatureOnNotDefined do
+    test "feature on for not enabled feature" do
+      defmodule BlockFeatureOnForNotEnabledFeature do
         use Features
 
         def hello do
@@ -121,11 +98,11 @@ defmodule FeaturesTest do
         end
       end
 
-      assert BlockFeatureOnNotDefined.hello() == nil
+      assert BlockFeatureOnForNotEnabledFeature.hello() == nil
     end
 
-    test "feature off defined" do
-      defmodule BlockFeatureOffDefined do
+    test "feature off for enabled feature" do
+      defmodule BlockFeatureOffForEnabledFeature do
         use Features
 
         def hello do
@@ -134,7 +111,7 @@ defmodule FeaturesTest do
         end
       end
 
-      assert BlockFeatureOffDefined.hello() == nil
+      assert BlockFeatureOffForEnabledFeature.hello() == nil
     end
 
     test "nested annotation" do

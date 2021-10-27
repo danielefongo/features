@@ -15,22 +15,6 @@ defmodule Features do
     end
   end
 
-  defmacro no_feature(feature, do: rest) do
-    quote do
-      if unquote(feature) not in @enabled_features do
-        unquote(rest)
-      end
-    end
-  end
-
-  defmacro feature(feature, do: rest) do
-    quote do
-      if unquote(feature) in @enabled_features do
-        unquote(rest)
-      end
-    end
-  end
-
   defmacro def(call, expr) do
     {_, expr} = Keyword.get_and_update(expr, :do, fn body -> {body, update_body(body)} end)
 
