@@ -2,14 +2,15 @@ defmodule Features do
   @moduledoc false
 
   import Kernel, except: [def: 2]
-  @enabled_features Application.compile_env!(:features, :features)
-  @trash_stuff_tag :__features_trash_stuff
+  import Enum, only: [filter: 2]
+  @features Application.compile_env!(:features, :features)
+  @trash :__features_trash_stuff
 
   defmacro __using__(_) do
     quote do
       import Kernel, except: [def: 2]
 
-      @enabled_features Application.compile_env!(:features, :features)
+      @features Application.compile_env!(:features, :features)
 
       require Features
       import Features
@@ -28,12 +29,12 @@ defmodule Features do
           raise "Cannot use feature and feature_off"
 
         feature != nil ->
-          if feature in @enabled_features do
+          if feature in @features do
             Kernel.def(unquote(call), unquote(expr))
           end
 
         feature_off != nil ->
-          if feature_off not in @enabled_features do
+          if feature_off not in @features do
             Kernel.def(unquote(call), unquote(expr))
           end
 
@@ -46,32 +47,18 @@ defmodule Features do
     end
   end
 
-  Kernel.def update_body(body) do
-    body
-    |> Macro.prewalk(nil, fn node, acc ->
-      case {node, acc} do
-        {{:@, _, [{:feature, _, [feature]}]}, nil} ->
-          {@trash_stuff_tag, {:has, feature}}
+  defp update_body(body),
+    do:
+      body
+      |> Macro.traverse(nil, &pre/2, &post/2)
+      |> elem(0)
 
-        {{:@, _, [{:feature_off, _, [feature]}]}, nil} ->
-          {@trash_stuff_tag, {:has_no, feature}}
+  defp pre({:@, _, [{:feature, _, [feature]}]}, nil), do: {@trash, {:on, feature}}
+  defp pre({:@, _, [{:feature_off, _, [feature]}]}, nil), do: {@trash, {:off, feature}}
+  defp pre(node, {:on, feature}), do: {if(feature in @features, do: node, else: @trash), nil}
+  defp pre(node, {:off, feature}), do: {if(feature not in @features, do: node, else: @trash), nil}
+  defp pre(node, _), do: {node, nil}
 
-        {node, {:has, feature}} ->
-          {if(feature in @enabled_features, do: node, else: @trash_stuff_tag), nil}
-
-        {node, {:has_no, feature}} ->
-          {if(feature not in @enabled_features, do: node, else: @trash_stuff_tag), nil}
-
-        _ ->
-          {node, nil}
-      end
-    end)
-    |> elem(0)
-    |> Macro.postwalk(fn node ->
-      case node do
-        {:__block__, _, block} -> {:__block__, [], Enum.filter(block, &(&1 != @trash_stuff_tag))}
-        node -> node
-      end
-    end)
-  end
+  defp post({:__block__, _, block}, a), do: {{:__block__, [], filter(block, &(&1 != @trash))}, a}
+  defp post(node, a), do: {node, a}
 end
