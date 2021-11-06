@@ -1,0 +1,3 @@
+%{
+  "attributes": {:hex, :attributes, "0.4.0", "e30f732a2d3781b22e2cd1316625448616a2014cf613192a86c5bc718dd2d889", [:mix], [], "hexpm", "607b40eeec7c86ca8d98f9c5d751d62fae67e0e1879dc912165b5cb6885167a7"},
+}

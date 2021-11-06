@@ -1,3 +1,5 @@
 use Mix.Config
 
-config :features, features: [:enabled_feature]
+config :features,
+  test: System.get_env("FEATURES_TEST") == "true",
+  features: [:enabled_feature]
