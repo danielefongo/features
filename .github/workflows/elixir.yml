@@ -22,12 +22,12 @@ jobs:
         run: mix deps.get
 
       - name: Run tests on compile
-        run: mix test
+        run: mix test --force
         env:
           FEATURES_TEST: false
 
       - name: Run tests on runtime
-        run: mix test
+        run: mix test --force
         env:
           FEATURES_TEST: true
 
