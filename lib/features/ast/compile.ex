@@ -1,4 +1,6 @@
 defmodule Features.Ast.Compile do
+  @moduledoc false
+
   @features Application.compile_env!(:features, :features)
   @trash :__features_trash_stuff
 

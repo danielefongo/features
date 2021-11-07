@@ -1,5 +1,31 @@
 defmodule Features do
-  @moduledoc false
+  @moduledoc """
+  Features enables or disables code sections with annotation.
+
+  ## Example
+      defmodule MyModule do
+        use Features
+
+        # this will enable the next function if :a_feature is in config
+        @feature :a_feature
+        def do_something do
+          :a_feature_is_enabled
+
+          # this will enable the next statement if :another_feature is in config
+          @feature :another_feature
+          :another_feature_is_enabled
+
+          # this will enable the next statement if :another_feature is not in config
+          @feature_off :another_feature
+          :another_feature_is_disabled
+        end
+      end
+
+  Code is automatically removed during compilation if the feature condition is not met.
+
+  A config example is the following:
+      config :features, features: [:a_feature]
+  """
 
   import Kernel, except: [def: 2]
   alias Features.Ast.Compile
@@ -25,6 +51,7 @@ defmodule Features do
     end
   end
 
+  @doc false
   defmacro def(call, expr) do
     {method, params} =
       case call do

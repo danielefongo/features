@@ -1,4 +1,6 @@
 defmodule Features.Ast.Runtime do
+  @moduledoc false
+
   def replace_methods({{module, method, arity}, methods}) do
     params = wrapper_params(module, arity)
     assignments = methods |> Enum.map(&wrapper_assignment/1) |> Enum.uniq()

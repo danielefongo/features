@@ -45,6 +45,12 @@ end
 ```
 
 Code is automatically removed during compilation if the feature condition is not met.
+
+A config example is the following:
+
+```elixir
+config :features, features: [:a_feature]
+```
 ### Testing
 
 To test featured code you have to set features property to enable runtime execution (it replaces the compile-time deletion).
