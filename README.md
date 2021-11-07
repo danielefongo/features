@@ -9,7 +9,7 @@ Add `features` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:features, github: "danielefongo/features", branch: "main"}
+    {:features, "~> 0.1.0"}
   ]
 end
 ```
