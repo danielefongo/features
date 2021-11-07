@@ -31,16 +31,19 @@ jobs:
         env:
           FEATURES_TEST: true
 
+      - name: Compile
+        run: mix compile
+
       - name: Extract mix version
         run: |
           echo ::set-env name=PACKAGE_VERSION::v$(mix version)
-          echo ::set-env name=RELEASED_VERSION::$(mix hex.package fetch yson 2>/dev/null | cut -f2 -d' ')
+          echo ::set-env name=RELEASED_VERSION::$(mix hex.package fetch features 2>/dev/null | cut -f2 -d' ')
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
           HEX_API_KEY: ${{secrets.HEXPM_TOKEN}}
 
       - name: Publish
-        if: env.PACKAGE_VERSION != env.RELEASED_VERSION && github.ref == 'refs/heads/master'
+        if: env.PACKAGE_VERSION != env.RELEASED_VERSION && github.ref == 'refs/heads/main'
         run: |
           git config user.name ${{ github.event.pusher.name }}
           git config user.email ${{ github.event.pusher.email }}
