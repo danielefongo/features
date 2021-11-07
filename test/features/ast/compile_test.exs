@@ -31,73 +31,65 @@ defmodule Features.Ast.CompileTest do
       assert_same_macro(Compile.replace_body(body), body)
     end
 
-    test "feature on for enabled one between instructions" do
+    test "feature on for enabled one" do
       body =
         quote do
-          :first
           @feature :enabled_feature
-          :second
+          :ok
         end
 
       expected =
         quote do
-          :first
-          :second
+          :ok
         end
 
       assert_same_macro(Compile.replace_body(body), expected)
     end
 
-    test "feature off for enabled one between instructions" do
+    test "feature off for enabled one" do
       body =
         quote do
-          :first
           @feature_off :enabled_feature
-          :second
+          :ok
         end
 
       expected =
         quote do
-          :first
         end
 
       assert_same_macro(Compile.replace_body(body), expected)
     end
 
-    test "feature on for not_enabled one between instructions" do
+    test "feature on for not_enabled one" do
       body =
         quote do
-          :first
           @feature :not_enabled_feature
-          :second
+          :ok
         end
 
       expected =
         quote do
-          :first
         end
 
       assert_same_macro(Compile.replace_body(body), expected)
     end
 
-    test "feature off for not_enabled one between instructions" do
+    test "feature off for not_enabled" do
       body =
         quote do
-          :first
           @feature_off :not_enabled_feature
-          :second
+          :ok
         end
 
       expected =
         quote do
-          :first
-          :second
+          :ok
         end
 
       assert_same_macro(Compile.replace_body(body), expected)
     end
 
-    test "feature on between instructions with following instructions" do
+    test "feature on between instructions" do
       body =
         quote do
           :first
@@ -111,52 +103,6 @@ defmodule Features.Ast.CompileTest do
           :first
           :second
           :other
-        end
-
-      assert_same_macro(Compile.replace_body(body), expected)
-    end
-
-    test "feature on before instruction" do
-      body =
-        quote do
-          @feature :enabled_feature
-          :something
-        end
-
-      expected =
-        quote do
-          :something
-        end
-
-      assert_same_macro(Compile.replace_body(body), expected)
-    end
-
-    test "feature off before instruction" do
-      body =
-        quote do
-          @feature_off :enabled_feature
-          :something
-        end
-
-      expected =
-        quote do
-        end
-
-      assert_same_macro(Compile.replace_body(body), expected)
-    end
-
-    test "feature on before instruction with following instructions" do
-      body =
-        quote do
-          @feature :enabled_feature
-          :something
-          :return
-        end
-
-      expected =
-        quote do
-          :something
-          :return
         end
 
       assert_same_macro(Compile.replace_body(body), expected)
@@ -183,21 +129,23 @@ defmodule Features.Ast.CompileTest do
       assert_same_macro(Compile.replace_body(body), expected)
     end
 
-    test "multiple features on with following instructions" do
+    test "multiple features on between instructions" do
       body =
         quote do
+          :ok
           @feature :enabled_feature
           :first
           @feature :enabled_feature
           :second
-          :other
+          :ok2
         end
 
       expected =
         quote do
+          :ok
           :first
           :second
-          :other
+          :ok2
         end
 
       assert_same_macro(Compile.replace_body(body), expected)
@@ -227,15 +175,19 @@ defmodule Features.Ast.CompileTest do
       body =
         quote do
           if true do
-            @feature :enabled_feature
-            :something
+            if true do
+              @feature :enabled_feature
+              :something
+            end
           end
         end
 
       expected =
         quote do
           if true do
-            :something
+            if true do
+              :something
+            end
           end
         end
 
@@ -283,21 +235,7 @@ defmodule Features.Ast.CompileTest do
   end
 
   describe "replace" do
-    test "single without params" do
-      {:def, _, [call, body]} =
-        quote do
-          def method(), do: :ok
-        end
-
-      expected =
-        quote do
-          Kernel.def(method(), do: :ok)
-        end
-
-      assert_same_macro(Compile.replace({nil, nil, call, body}), expected)
-    end
-
-    test "single without features" do
+    test "without features" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b), do: :ok
@@ -308,10 +246,10 @@ defmodule Features.Ast.CompileTest do
           Kernel.def(method(a, b), do: :ok)
         end
 
-      assert_same_macro(Compile.replace({nil, nil, call, body}), expected)
+      assert_same_macro(Compile.replace_method({nil, nil, call, body}), expected)
     end
 
-    test "single with feature on" do
+    test "feature on for enabled one" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b), do: :ok
@@ -322,10 +260,24 @@ defmodule Features.Ast.CompileTest do
           Kernel.def(method(a, b), do: :ok)
         end
 
-      assert_same_macro(Compile.replace({:enabled_feature, nil, call, body}), expected)
+      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
     end
 
-    test "single with feature off" do
+    test "feature off for enabled one" do
+      {:def, _, [call, body]} =
+        quote do
+          def method(a, b), do: :ok
+        end
+
+      expected =
+        quote do
+          nil
+        end
+
+      assert_same_macro(Compile.replace_method({nil, :enabled_feature, call, body}), expected)
+    end
+
+    test "feature off for disabled one" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b), do: :ok
@@ -336,10 +288,24 @@ defmodule Features.Ast.CompileTest do
           Kernel.def(method(a, b), do: :ok)
         end
 
-      assert_same_macro(Compile.replace({nil, :not_enabled_feature, call, body}), expected)
+      assert_same_macro(Compile.replace_method({nil, :not_enabled_feature, call, body}), expected)
     end
 
-    test "single with feature on and complex body" do
+    test "feature on for disabled one" do
+      {:def, _, [call, body]} =
+        quote do
+          def method(a, b), do: :ok
+        end
+
+      expected =
+        quote do
+          nil
+        end
+
+      assert_same_macro(Compile.replace_method({:not_enabled_feature, nil, call, body}), expected)
+    end
+
+    test "feature on and complex body" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b) do
@@ -357,10 +323,10 @@ defmodule Features.Ast.CompileTest do
           end
         end
 
-      assert_same_macro(Compile.replace({:enabled_feature, nil, call, body}), expected)
+      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
     end
 
-    test "single with when and feature on" do
+    test "when and feature on" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b) when a == 1, do: :ok
@@ -373,10 +339,10 @@ defmodule Features.Ast.CompileTest do
           end
         end
 
-      assert_same_macro(Compile.replace({:enabled_feature, nil, call, body}), expected)
+      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
     end
 
-    test "single with when and feature off" do
+    test "when and feature off" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b) when a == 1, do: :ok
@@ -389,7 +355,7 @@ defmodule Features.Ast.CompileTest do
           end
         end
 
-      assert_same_macro(Compile.replace({nil, :not_enabled_feature, call, body}), expected)
+      assert_same_macro(Compile.replace_method({nil, :not_enabled_feature, call, body}), expected)
     end
   end
 

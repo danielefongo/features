@@ -7,34 +7,30 @@ defmodule Features.Ast.Compile do
   def replace_all({{_, _, _}, bodies}) do
     new_bodies =
       bodies
-      |> Enum.map(&replace/1)
+      |> Enum.map(&replace_method/1)
       |> List.flatten()
       |> Enum.filter(&(not is_nil(&1)))
 
     {:__block__, [], new_bodies}
   end
 
-  def replace({feature, feature_off, call, [do: body]}) do
-    body = replace_body(body)
+  def replace_method({nil, nil, call, [do: body]}) do
+    quote do: Kernel.def(unquote(call), do: unquote(replace_body(body)))
+  end
 
-    cond do
-      feature != nil && feature_off != nil ->
-        raise "Cannot use feature and feature_off"
-
-      feature != nil ->
-        if feature in @features do
-          quote do: Kernel.def(unquote(call), do: unquote(body))
-        end
-
-      feature_off != nil ->
-        if feature_off not in @features do
-          quote do: Kernel.def(unquote(call), do: unquote(body))
-        end
-
-      true ->
-        quote do: Kernel.def(unquote(call), do: unquote(body))
+  def replace_method({nil, feature_off, call, [do: body]}) do
+    if feature_off not in @features do
+      quote do: Kernel.def(unquote(call), do: unquote(replace_body(body)))
     end
   end
+
+  def replace_method({feature, nil, call, [do: body]}) do
+    if feature in @features do
+      quote do: Kernel.def(unquote(call), do: unquote(replace_body(body)))
+    end
+  end
+
+  def replace_method(_), do: raise("Cannot use feature and feature_off")
 
   def replace_body(body),
     do:

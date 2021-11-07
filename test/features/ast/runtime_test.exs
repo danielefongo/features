@@ -309,8 +309,8 @@ defmodule Features.Ast.RuntimeTest do
     end
   end
 
-  describe "replace" do
-    test "single without params" do
+  describe "replace_method" do
+    test "without params" do
       {:def, _, [call, body]} =
         quote do
           def method(), do: :ok
@@ -318,13 +318,13 @@ defmodule Features.Ast.RuntimeTest do
 
       expected =
         quote do
-          [] -> :ok
+          [] when true -> :ok
         end
 
-      assert_same_macro(Runtime.replace({nil, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({nil, nil, call, body}), expected)
     end
 
-    test "single without features" do
+    test "without features" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b), do: :ok
@@ -332,13 +332,13 @@ defmodule Features.Ast.RuntimeTest do
 
       expected =
         quote do
-          [a, b] -> :ok
+          [a, b] when true -> :ok
         end
 
-      assert_same_macro(Runtime.replace({nil, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({nil, nil, call, body}), expected)
     end
 
-    test "single with feature on" do
+    test "with feature on" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b), do: :ok
@@ -346,13 +346,13 @@ defmodule Features.Ast.RuntimeTest do
 
       expected =
         quote do
-          [a, b] when feature == true -> :ok
+          [a, b] when feature == true and true -> :ok
         end
 
-      assert_same_macro(Runtime.replace({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
     end
 
-    test "single with feature off" do
+    test "with feature off" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b), do: :ok
@@ -360,13 +360,13 @@ defmodule Features.Ast.RuntimeTest do
 
       expected =
         quote do
-          [a, b] when feature_off == false -> :ok
+          [a, b] when feature_off == false and true -> :ok
         end
 
-      assert_same_macro(Runtime.replace({nil, :feature_off, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({nil, :feature_off, call, body}), expected)
     end
 
-    test "single with feature on and complex body" do
+    test "with feature on and complex body" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b) do
@@ -377,17 +377,17 @@ defmodule Features.Ast.RuntimeTest do
 
       expected =
         quote do
-          [a, b] when feature == true ->
+          [a, b] when feature == true and true ->
             cond do
               Features.Test.enabled?(:feature) == true -> :ok
               true -> nil
             end
         end
 
-      assert_same_macro(Runtime.replace({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
     end
 
-    test "single with when and feature on" do
+    test "with when and feature on" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b) when a == 1, do: :ok
@@ -398,10 +398,10 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature == true and a == 1 -> :ok
         end
 
-      assert_same_macro(Runtime.replace({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
     end
 
-    test "single with when and feature off" do
+    test "with when and feature off" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b) when a == 1, do: :ok
@@ -412,10 +412,10 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature_off == false and a == 1 -> :ok
         end
 
-      assert_same_macro(Runtime.replace({nil, :feature_off, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({nil, :feature_off, call, body}), expected)
     end
 
-    test "single with multiple when" do
+    test "with multiple when" do
       {:def, _, [call, body]} =
         quote do
           def method(a, b) when a == 1 or a != 2, do: :ok
@@ -426,11 +426,11 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature == true and (a == 1 or a != 2) -> :ok
         end
 
-      assert_same_macro(Runtime.replace({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
     end
   end
 
-  test "replace_all" do
+  test "replace_methods" do
     {:def, _, [call1, body1]} =
       quote do
         def method(1, b) when b == 1, do: :ok
@@ -461,7 +461,7 @@ defmodule Features.Ast.RuntimeTest do
       end
 
     generated =
-      Runtime.replace_all(
+      Runtime.replace_methods(
         {{MyModule, :method, 2},
          [
            {:feature, nil, call1, body1},

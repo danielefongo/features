@@ -61,6 +61,6 @@ defmodule Features do
   end
 
   defp replace_all(methods) do
-    if @test, do: Runtime.replace_all(methods), else: Compile.replace_all(methods)
+    if @test, do: Runtime.replace_methods(methods), else: Compile.replace_all(methods)
   end
 end
