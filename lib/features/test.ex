@@ -77,6 +77,9 @@ defmodule Features.Test do
 
   @doc false
   defp get_features(process) do
-    Agent.get(Process.whereis(:features__test), &Map.get(&1, process))
+    case Agent.get(Process.whereis(:features__test), &Map.get(&1, process)) do
+      nil -> []
+      features -> features
+    end
   end
 end

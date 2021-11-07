@@ -12,4 +12,8 @@ defmodule Features.TestTest do
     assert Test.disabled?(:feature1) == false
     assert Test.disabled?(:feature2) == true
   end
+
+  featured_test "empty" do
+    assert Test.enabled?(:feature1) == false
+  end
 end
