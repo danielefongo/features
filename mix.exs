@@ -7,8 +7,10 @@ defmodule Features.MixProject do
   def project do
     [
       app: :features,
-      version: "0.1.0",
-      elixir: "~> 1.12",
+      description: "Enable or disable code using feature toggles",
+      source_url: @github,
+      version: @version,
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: [

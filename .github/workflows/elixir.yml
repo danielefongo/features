@@ -1,0 +1,53 @@
+name: ci
+
+on: [push]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    container: elixir:1.10
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: Local hex
+        run: mix local.hex --force
+
+      - name: Local rebar
+        run: mix local.rebar --force
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run tests on compile
+        run: mix test
+        env:
+          FEATURES_TEST: false
+
+      - name: Run tests on runtime
+        run: mix test
+        env:
+          FEATURES_TEST: true
+
+      # - name: Extract mix version
+      #   run: |
+      #     echo ::set-env name=PACKAGE_VERSION::v$(mix version)
+      #     echo ::set-env name=RELEASED_VERSION::$(mix hex.package fetch yson 2>/dev/null | cut -f2 -d' ')
+      #   env:
+      #     ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      #     HEX_API_KEY: ${{secrets.HEXPM_TOKEN}}
+
+      # - name: Publish
+      #   if: env.PACKAGE_VERSION != env.RELEASED_VERSION && github.ref == 'refs/heads/master'
+      #   run: |
+      #     git config user.name ${{ github.event.pusher.name }}
+      #     git config user.email ${{ github.event.pusher.email }}
+      #     git tag --annotate ${PACKAGE_VERSION} --message v${PACKAGE_VERSION}
+      #     git push https://x-access-token:${GIT_TOKEN}@github.com/${GIT_REPO}.git --tags
+      #     mix hex.publish --yes
+      #   env:
+      #     HEX_API_KEY: ${{secrets.HEXPM_TOKEN}}
+      #     GIT_TOKEN: ${{ github.token }}
+      #     GIT_REPO: ${{ github.repository }}
