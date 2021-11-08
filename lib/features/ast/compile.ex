@@ -1,7 +1,6 @@
 defmodule Features.Ast.Compile do
   @moduledoc false
 
-  @features Application.compile_env!(:features, :features)
   @trash :__features_trash_stuff
 
   import Enum, only: [filter: 2]
@@ -21,13 +20,13 @@ defmodule Features.Ast.Compile do
   end
 
   def replace_method({nil, feature_off, call, [do: body]}) do
-    if feature_off not in @features do
+    if feature_off not in fts() do
       quote do: Kernel.def(unquote(call), do: unquote(replace_body(body)))
     end
   end
 
   def replace_method({feature, nil, call, [do: body]}) do
-    if feature in @features do
+    if feature in fts() do
       quote do: Kernel.def(unquote(call), do: unquote(replace_body(body)))
     end
   end
@@ -42,10 +41,12 @@ defmodule Features.Ast.Compile do
 
   defp pre({:@, _, [{:feature, _, [feature]}]}, nil), do: {@trash, {:on, feature}}
   defp pre({:@, _, [{:feature_off, _, [feature]}]}, nil), do: {@trash, {:off, feature}}
-  defp pre(node, {:on, feature}), do: {if(feature in @features, do: node, else: @trash), nil}
-  defp pre(node, {:off, feature}), do: {if(feature not in @features, do: node, else: @trash), nil}
+  defp pre(node, {:on, feature}), do: {if(feature in fts(), do: node, else: @trash), nil}
+  defp pre(node, {:off, feature}), do: {if(feature not in fts(), do: node, else: @trash), nil}
   defp pre(node, _), do: {node, nil}
 
   defp post({:__block__, _, block}, a), do: {{:__block__, [], filter(block, &(&1 != @trash))}, a}
   defp post(node, a), do: {node, a}
+
+  defp fts, do: Application.fetch_env!(:features, :features)
 end

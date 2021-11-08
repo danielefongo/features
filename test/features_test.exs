@@ -1,7 +1,8 @@
 defmodule FeaturesTest do
   use ExUnit.Case
-  use Features
   use Features.Test
+
+  @test Application.fetch_env!(:features, :test)
 
   defmodule RuntimeModule do
     use Features

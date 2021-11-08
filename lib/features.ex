@@ -31,8 +31,6 @@ defmodule Features do
   alias Features.Ast.Compile
   alias Features.Ast.Runtime
 
-  @test Application.compile_env!(:features, :test)
-
   defmacro __using__(_) do
     quote do
       import Kernel, except: [def: 2]
@@ -40,8 +38,6 @@ defmodule Features do
       Module.register_attribute(__MODULE__, :feature, persist: true)
       Module.register_attribute(__MODULE__, :feature_off, persist: true)
 
-      @features Application.compile_env!(:features, :features)
-      @test Application.compile_env!(:features, :test)
       @before_compile Features
 
       Attributes.set(__MODULE__, [:methods], %{})
@@ -88,6 +84,8 @@ defmodule Features do
   end
 
   defp replace_all(methods) do
-    if @test, do: Runtime.replace_methods(methods), else: Compile.replace_all(methods)
+    if test?(), do: Runtime.replace_methods(methods), else: Compile.replace_all(methods)
   end
+
+  defp test?, do: Application.fetch_env!(:features, :test)
 end
