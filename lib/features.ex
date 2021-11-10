@@ -6,7 +6,8 @@ defmodule Features do
       defmodule MyModule do
         use Features
 
-        # this will enable the next function if :a_feature is in config
+        @doc "A doc for do_something/0 function."
+        # this will enable the next function with his doc if :a_feature is in config
         @feature :a_feature
         def do_something do
           :a_feature_is_enabled
