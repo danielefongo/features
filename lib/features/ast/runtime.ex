@@ -2,12 +2,15 @@ defmodule Features.Ast.Runtime do
   @moduledoc false
 
   def replace_methods({{module, method, arity}, methods}) do
+    params_with_defaults = wrapper_params_with_default(module, hd(methods))
+    methods = remove_header(methods)
     params = wrapper_params(module, arity)
     assignments = methods |> Enum.map(&wrapper_assignment/1) |> Enum.uniq()
     clauses = methods |> Enum.map(&replace_method/1) |> List.flatten()
+
     condition = wrapper_condition(params, clauses)
 
-    call = {method, [], params}
+    call = {method, [], params_with_defaults}
     expr = [do: {:__block__, [], assignments ++ [condition]}]
 
     quote do
@@ -57,13 +60,42 @@ defmodule Features.Ast.Runtime do
 
   # Params
 
+  defp wrapper_params_with_default(module, {_, _, {:when, _, [{_, _, params}, _]}, _}),
+    do: generate_params_with_default(module, params)
+
+  defp wrapper_params_with_default(module, {_, _, {_, _, params}, _}),
+    do: generate_params_with_default(module, params)
+
   defp wrapper_params(_module, 0), do: []
 
   defp wrapper_params(module, arity),
     do: Enum.map(1..arity, &{String.to_atom("param_#{&1}"), [], module})
 
   def method_params(nil), do: []
-  def method_params(params), do: params
+
+  def method_params(params) do
+    Enum.map(params, fn
+      {:\\, _, [{var, _, _}, _default]} -> {var, [], nil}
+      var -> var
+    end)
+  end
+
+  defp generate_params_with_default(_, nil), do: []
+
+  defp generate_params_with_default(module, params) do
+    params
+    |> Enum.with_index(1)
+    |> Enum.map(fn
+      {{:\\, _, [{_, _, _}, val]}, index} -> generate_param(module, index, val)
+      {_param, index} -> generate_param(module, index)
+    end)
+  end
+
+  defp generate_param(module, index),
+    do: {String.to_atom("param_#{index}"), [], module}
+
+  defp generate_param(module, index, default),
+    do: {:\\, [], [generate_param(module, index), default]}
 
   # Assignments
 
@@ -83,9 +115,11 @@ defmodule Features.Ast.Runtime do
 
   # Conditions and cases
 
-  def wrapper_condition(params, methods) do
+  def wrapper_condition(_, []), do: nil
+
+  def wrapper_condition(params, clauses) do
     quote do
-      case unquote(params), do: unquote(methods)
+      case unquote(params), do: unquote(clauses)
     end
   end
 
@@ -146,5 +180,14 @@ defmodule Features.Ast.Runtime do
         unquote(pre)
         unquote(code)
     end
+  end
+
+  # Methods
+
+  defp remove_header(methods) do
+    Enum.filter(methods, fn
+      {_, _, _, nil} -> false
+      _ -> true
+    end)
   end
 end

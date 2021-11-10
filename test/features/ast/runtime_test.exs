@@ -401,6 +401,20 @@ defmodule Features.Ast.RuntimeTest do
       assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
     end
 
+    test "with defaults and feature on" do
+      {:def, _, [call, body]} =
+        quote do
+          def method(a, b \\ nil), do: :ok
+        end
+
+      expected =
+        quote do
+          [a, b] when feature == true and true -> :ok
+        end
+
+      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+    end
+
     test "with when and feature off" do
       {:def, _, [call, body]} =
         quote do
@@ -428,49 +442,117 @@ defmodule Features.Ast.RuntimeTest do
 
       assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
     end
+
+    test "with defaults" do
+      {:def, _, [call, body]} =
+        quote do
+          def method(a, b \\ nil), do: :ok
+        end
+
+      expected =
+        quote do
+          [a, b] when feature == true and true -> :ok
+        end
+
+      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+    end
   end
 
-  test "replace_methods" do
-    {:def, _, [call1, body1]} =
-      quote do
-        def method(1, b) when b == 1, do: :ok
-      end
+  describe "replace_methods" do
+    test "methods only" do
+      {:def, _, [call1, body1]} =
+        quote do
+          def method(1, b) when b == 1, do: :ok
+        end
 
-    {:def, _, [call2, body2]} =
-      quote do
-        def method(2, b) when b == 2, do: :ok
-      end
+      {:def, _, [call2, body2]} =
+        quote do
+          def method(2, b) when b == 2, do: :ok
+        end
 
-    {:def, _, [call3, body3]} =
-      quote do
-        def method(3, b) when b == 3, do: :ok
-      end
+      {:def, _, [call3, body3]} =
+        quote do
+          def method(3, b) when b == 3, do: :ok
+        end
 
-    expected =
-      quote do
-        Kernel.def method(param_1, param_2) do
-          feature = Features.Test.enabled?(:feature)
-          not_enabled_feature = Features.Test.enabled?(:not_enabled_feature)
+      expected =
+        quote do
+          Kernel.def method(param_1, param_2) do
+            feature = Features.Test.enabled?(:feature)
+            not_enabled_feature = Features.Test.enabled?(:not_enabled_feature)
 
-          case [param_1, param_2] do
-            [1, b] when feature == true and b == 1 -> :ok
-            [2, b] when feature == true and b == 2 -> :ok
-            [3, b] when not_enabled_feature == false and b == 3 -> :ok
+            case [param_1, param_2] do
+              [1, b] when feature == true and b == 1 -> :ok
+              [2, b] when feature == true and b == 2 -> :ok
+              [3, b] when not_enabled_feature == false and b == 3 -> :ok
+            end
           end
         end
-      end
 
-    generated =
-      Runtime.replace_methods(
-        {{MyModule, :method, 2},
-         [
-           {:feature, nil, call1, body1},
-           {:feature, nil, call2, body2},
-           {nil, :not_enabled_feature, call3, body3}
-         ]}
-      )
+      generated =
+        Runtime.replace_methods(
+          {{MyModule, :method, 2},
+           [
+             {:feature, nil, call1, body1},
+             {:feature, nil, call2, body2},
+             {nil, :not_enabled_feature, call3, body3}
+           ]}
+        )
 
-    assert_same_macro(generated, expected)
+      assert_same_macro(generated, expected)
+    end
+
+    test "header only" do
+      {:def, _, [call1]} =
+        quote do
+          def method(a, b \\ nil)
+        end
+
+      expected =
+        quote do
+          Kernel.def method(param_1, param_2 \\ nil) do
+            nil
+          end
+        end
+
+      generated = Runtime.replace_methods({{MyModule, :method, 2}, [{:any, :any, call1, nil}]})
+
+      assert_same_macro(generated, expected)
+    end
+
+    test "header and methods" do
+      {:def, _, [call1]} =
+        quote do
+          def method(a, b \\ nil)
+        end
+
+      {:def, _, [call2, body2]} =
+        quote do
+          def method(1, b) when b == 1, do: :ok
+        end
+
+      expected =
+        quote do
+          Kernel.def method(param_1, param_2 \\ nil) do
+            feature = Features.Test.enabled?(:feature)
+
+            case [param_1, param_2] do
+              [1, b] when feature == true and b == 1 -> :ok
+            end
+          end
+        end
+
+      generated =
+        Runtime.replace_methods(
+          {{MyModule, :method, 2},
+           [
+             {:any, :any, call1, nil},
+             {:feature, nil, call2, body2}
+           ]}
+        )
+
+      assert_same_macro(generated, expected)
+    end
   end
 
   defp assert_same_macro(macro1, macro2) do

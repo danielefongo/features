@@ -357,6 +357,50 @@ defmodule Features.Ast.CompileTest do
 
       assert_same_macro(Compile.replace_method({nil, :not_enabled_feature, call, body}), expected)
     end
+
+    test "header and feature on" do
+      {:def, _, [call]} =
+        quote do
+          def method(a, b \\ nil)
+        end
+
+      expected =
+        quote do
+          Kernel.def(method(a, b \\ nil), nil)
+        end
+
+      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, nil}), expected)
+    end
+
+    test "header and feature off" do
+      {:def, _, [call]} =
+        quote do
+          def method(a, b \\ nil)
+        end
+
+      expected =
+        quote do
+          Kernel.def(method(a, b \\ nil), nil)
+        end
+
+      assert_same_macro(Compile.replace_method({nil, :not_enabled_feature, call, nil}), expected)
+    end
+
+    test "with defaults" do
+      {:def, _, [call, body]} =
+        quote do
+          def method(a, b \\ nil), do: :ok
+        end
+
+      expected =
+        quote do
+          Kernel.def method(a, b \\ nil) do
+            :ok
+          end
+        end
+
+      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
+    end
   end
 
   test "replace_all" do

@@ -27,13 +27,12 @@ defmodule Features do
       config :features, features: [:a_feature]
   """
 
-  import Kernel, except: [def: 2]
   alias Features.Ast.Compile
   alias Features.Ast.Runtime
 
   defmacro __using__(_) do
     quote do
-      import Kernel, except: [def: 2]
+      import Kernel, except: [def: 1, def: 2]
 
       Module.register_attribute(__MODULE__, :feature, persist: true)
       Module.register_attribute(__MODULE__, :feature_off, persist: true)
@@ -48,7 +47,7 @@ defmodule Features do
   end
 
   @doc false
-  defmacro def(call, expr) do
+  defmacro def(call, expr \\ nil) do
     {method, params} =
       case call do
         {:when, _, [{method, _, params} | _]} -> {method, params}
@@ -65,12 +64,10 @@ defmodule Features do
         raise "Cannot use feature and feature_off"
       end
 
-      Attributes.update(
-        __MODULE__,
-        [:methods, {__MODULE__, unquote(method), unquote(param_len)}],
-        [],
-        &(&1 ++ [{feature, feature_off, unquote(Macro.escape(call)), unquote(Macro.escape(expr))}])
-      )
+      path = [:methods, {__MODULE__, unquote(method), unquote(param_len)}]
+      method = [{feature, feature_off, unquote(Macro.escape(call)), unquote(Macro.escape(expr))}]
+
+      Attributes.update(__MODULE__, path, [], &(&1 ++ method))
 
       Module.delete_attribute(__MODULE__, :feature)
       Module.delete_attribute(__MODULE__, :feature_off)

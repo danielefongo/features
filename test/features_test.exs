@@ -4,50 +4,33 @@ defmodule FeaturesTest do
 
   @test Application.fetch_env!(:features, :test)
 
-  defmodule RuntimeModule do
-    use Features
-
-    @feature :feature1
-    def feature1(a, _b), do: a
-
-    @feature :feature2
-    def feature2(a) when a == true, do: :ok
-
-    @feature :feature2
-    def feature2(a) when a == false, do: :ko
-
-    def inner_features do
-      @feature :feature1
-      :feature1
-      @feature :feature2
-      :feature2
-    end
-  end
-
-  defmodule CompileModule do
-    use Features
-
-    @feature :enabled_feature
-    def enabled_feature_on?(), do: true
-
-    @feature_off :enabled_feature
-    def enabled_feature_off?(), do: :should_rise
-
-    @feature :not_enabled_feature
-    def not_enabled_feature_on?(), do: :should_rise
-
-    @feature_off :not_enabled_feature
-    def not_enabled_feature_off?(), do: true
-
-    def inner_features do
-      @feature :enabled_feature
-      :enabled_feature
-      @feature :not_enabled_feature
-      :not_enabled_feature
-    end
-  end
-
   if not @test do
+    defmodule CompileModule do
+      use Features
+
+      @feature :enabled_feature
+      def enabled_feature_on?()
+
+      @feature :enabled_feature
+      def enabled_feature_on?(), do: true
+
+      @feature_off :enabled_feature
+      def enabled_feature_off?(), do: :should_rise
+
+      @feature :not_enabled_feature
+      def not_enabled_feature_on?(), do: :should_rise
+
+      @feature_off :not_enabled_feature
+      def not_enabled_feature_off?(), do: true
+
+      def inner_features do
+        @feature :enabled_feature
+        :enabled_feature
+        @feature :not_enabled_feature
+        :not_enabled_feature
+      end
+    end
+
     test "enabled_feature" do
       assert CompileModule.enabled_feature_on?() == true
       assert_raise UndefinedFunctionError, fn -> CompileModule.enabled_feature_off?() end
@@ -61,6 +44,28 @@ defmodule FeaturesTest do
   end
 
   if @test do
+    defmodule RuntimeModule do
+      use Features
+
+      def feature1(a, b \\ nil)
+
+      @feature :feature1
+      def feature1(a, _b), do: a
+
+      @feature :feature2
+      def feature2(a) when a == true, do: :ok
+
+      @feature :feature2
+      def feature2(a) when a == false, do: :ko
+
+      def inner_features do
+        @feature :feature1
+        :feature1
+        @feature :feature2
+        :feature2
+      end
+    end
+
     test "feature1" do
       start_supervised(Features.Test)
       Features.Test.set_features(self(), [:feature1])
