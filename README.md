@@ -1,6 +1,12 @@
 # Features
 
-Features is an elixir porting of [rust cargo features](https://doc.rust-lang.org/cargo/reference/features.html).
+Features is an Elixir porting of [rust cargo features](https://doc.rust-lang.org/cargo/reference/features.html).
+
+## Disclaimer
+
+**This package is experimental!**
+
+Unexpected behavior may happen, so please try this library and [open an issue](https://github.com/danielefongo/features/issues/new) if you find a bug 💜.
 
 ## Installation
 
@@ -9,7 +15,7 @@ Add `features` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:features, github: "danielefongo/features", branch: "main"}
+    {:features, "~> 0.1.0"}
   ]
 end
 ```
