@@ -321,7 +321,7 @@ defmodule Features.Ast.RuntimeTest do
           [] when true -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({nil, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({nil, nil, :any_doc, call, body}), expected)
     end
 
     test "without features" do
@@ -335,7 +335,21 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when true -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({nil, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({nil, nil, :any_doc, call, body}), expected)
+    end
+
+    test "with pattern matching" do
+      {:def, _, [call, body]} =
+        quote do
+          def method(a, %{a: b} = c), do: :ok
+        end
+
+      expected =
+        quote do
+          [a, %{a: b} = c] when true -> :ok
+        end
+
+      assert_same_macro(Runtime.replace_method({nil, nil, :any_doc, call, body}), expected)
     end
 
     test "with feature on" do
@@ -349,7 +363,7 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature == true and true -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, :any_doc, call, body}), expected)
     end
 
     test "with feature off" do
@@ -363,7 +377,10 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature_off == false and true -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({nil, :feature_off, call, body}), expected)
+      assert_same_macro(
+        Runtime.replace_method({nil, :feature_off, :any_doc, call, body}),
+        expected
+      )
     end
 
     test "with feature on and complex body" do
@@ -384,7 +401,7 @@ defmodule Features.Ast.RuntimeTest do
             end
         end
 
-      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, :any_doc, call, body}), expected)
     end
 
     test "with when and feature on" do
@@ -398,7 +415,7 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature == true and a == 1 -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, :any_doc, call, body}), expected)
     end
 
     test "with defaults and feature on" do
@@ -412,7 +429,7 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature == true and true -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, :any_doc, call, body}), expected)
     end
 
     test "with when and feature off" do
@@ -426,7 +443,10 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature_off == false and a == 1 -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({nil, :feature_off, call, body}), expected)
+      assert_same_macro(
+        Runtime.replace_method({nil, :feature_off, :any_doc, call, body}),
+        expected
+      )
     end
 
     test "with multiple when" do
@@ -440,7 +460,7 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature == true and (a == 1 or a != 2) -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, :any_doc, call, body}), expected)
     end
 
     test "with defaults" do
@@ -454,7 +474,7 @@ defmodule Features.Ast.RuntimeTest do
           [a, b] when feature == true and true -> :ok
         end
 
-      assert_same_macro(Runtime.replace_method({:feature, nil, call, body}), expected)
+      assert_same_macro(Runtime.replace_method({:feature, nil, :any_doc, call, body}), expected)
     end
   end
 
@@ -493,9 +513,9 @@ defmodule Features.Ast.RuntimeTest do
         Runtime.replace_methods(
           {{MyModule, :method, 2},
            [
-             {:feature, nil, call1, body1},
-             {:feature, nil, call2, body2},
-             {nil, :not_enabled_feature, call3, body3}
+             {:feature, nil, :any_doc, call1, body1},
+             {:feature, nil, :any_doc, call2, body2},
+             {nil, :not_enabled_feature, :any_doc, call3, body3}
            ]}
         )
 
@@ -515,7 +535,8 @@ defmodule Features.Ast.RuntimeTest do
           end
         end
 
-      generated = Runtime.replace_methods({{MyModule, :method, 2}, [{:any, :any, call1, nil}]})
+      generated =
+        Runtime.replace_methods({{MyModule, :method, 2}, [{:any, :any, :any_doc, call1, nil}]})
 
       assert_same_macro(generated, expected)
     end
@@ -546,8 +567,8 @@ defmodule Features.Ast.RuntimeTest do
         Runtime.replace_methods(
           {{MyModule, :method, 2},
            [
-             {:any, :any, call1, nil},
-             {:feature, nil, call2, body2}
+             {:any, :any, :any_doc, call1, nil},
+             {:feature, nil, :any_doc, call2, body2}
            ]}
         )
 

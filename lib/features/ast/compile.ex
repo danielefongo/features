@@ -15,23 +15,35 @@ defmodule Features.Ast.Compile do
     {:__block__, [], new_bodies}
   end
 
-  def replace_method({nil, nil, call, expr}) do
-    quote do: Kernel.def(unquote(call), unquote(replace_body(expr)))
+  def replace_method({nil, nil, doc, call, expr}) do
+    quote do
+      @doc unquote(get_doc(doc))
+      Kernel.def(unquote(call), unquote(replace_body(expr)))
+    end
   end
 
-  def replace_method({nil, feature_off, call, expr}) do
+  def replace_method({nil, feature_off, doc, call, expr}) do
     if feature_off not in fts() do
-      quote do: Kernel.def(unquote(call), unquote(replace_body(expr)))
+      quote do
+        @doc unquote(get_doc(doc))
+        Kernel.def(unquote(call), unquote(replace_body(expr)))
+      end
     end
   end
 
-  def replace_method({feature, nil, call, expr}) do
+  def replace_method({feature, nil, doc, call, expr}) do
     if feature in fts() do
-      quote do: Kernel.def(unquote(call), unquote(replace_body(expr)))
+      quote do
+        @doc unquote(get_doc(doc))
+        Kernel.def(unquote(call), unquote(replace_body(expr)))
+      end
     end
   end
 
-  def replace_method({_, _, _, _}), do: raise("Cannot use feature and feature_off")
+  def replace_method({_, _, _, _, _}), do: raise("Cannot use feature and feature_off")
+
+  defp get_doc({_, doc}), do: doc
+  defp get_doc(nil), do: nil
 
   def replace_body(body),
     do:

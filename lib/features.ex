@@ -59,18 +59,22 @@ defmodule Features do
     quote do
       feature = Module.get_attribute(__MODULE__, :feature)
       feature_off = Module.get_attribute(__MODULE__, :feature_off)
+      doc = Module.get_attribute(__MODULE__, :doc)
 
       if feature != nil && feature_off != nil do
         raise "Cannot use feature and feature_off"
       end
 
       path = [:methods, {__MODULE__, unquote(method), unquote(param_len)}]
-      method = [{feature, feature_off, unquote(Macro.escape(call)), unquote(Macro.escape(expr))}]
+      call = unquote(Macro.escape(call))
+      expr = unquote(Macro.escape(expr))
+      method = {feature, feature_off, doc, call, expr}
 
-      Attributes.update(__MODULE__, path, [], &(&1 ++ method))
+      Attributes.update(__MODULE__, path, [], &(&1 ++ [method]))
 
       Module.delete_attribute(__MODULE__, :feature)
       Module.delete_attribute(__MODULE__, :feature_off)
+      Module.delete_attribute(__MODULE__, :doc)
     end
   end
 

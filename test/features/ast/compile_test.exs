@@ -243,10 +243,28 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def(method(a, b), do: :ok)
         end
 
-      assert_same_macro(Compile.replace_method({nil, nil, call, body}), expected)
+      assert_same_macro(Compile.replace_method({nil, nil, nil, call, body}), expected)
+    end
+
+    test "without features with custom doc" do
+      {:def, _, [call, body]} =
+        quote do
+          def method(a, b), do: :ok
+        end
+
+      expected =
+        quote do
+          @doc """
+          doc!
+          """
+          Kernel.def(method(a, b), do: :ok)
+        end
+
+      assert_same_macro(Compile.replace_method({nil, nil, {1, "doc!\n"}, call, body}), expected)
     end
 
     test "feature on for enabled one" do
@@ -257,10 +275,14 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def(method(a, b), do: :ok)
         end
 
-      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({:enabled_feature, nil, nil, call, body}),
+        expected
+      )
     end
 
     test "feature off for enabled one" do
@@ -274,7 +296,10 @@ defmodule Features.Ast.CompileTest do
           nil
         end
 
-      assert_same_macro(Compile.replace_method({nil, :enabled_feature, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({nil, :enabled_feature, nil, call, body}),
+        expected
+      )
     end
 
     test "feature off for disabled one" do
@@ -285,10 +310,14 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def(method(a, b), do: :ok)
         end
 
-      assert_same_macro(Compile.replace_method({nil, :not_enabled_feature, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({nil, :not_enabled_feature, nil, call, body}),
+        expected
+      )
     end
 
     test "feature on for disabled one" do
@@ -302,7 +331,10 @@ defmodule Features.Ast.CompileTest do
           nil
         end
 
-      assert_same_macro(Compile.replace_method({:not_enabled_feature, nil, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({:not_enabled_feature, nil, nil, call, body}),
+        expected
+      )
     end
 
     test "feature on and complex body" do
@@ -318,12 +350,16 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def method(a, b) do
             :enabled_feature
           end
         end
 
-      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({:enabled_feature, nil, nil, call, body}),
+        expected
+      )
     end
 
     test "when and feature on" do
@@ -334,12 +370,16 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def method(a, b) when a == 1 do
             :ok
           end
         end
 
-      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({:enabled_feature, nil, nil, call, body}),
+        expected
+      )
     end
 
     test "when and feature off" do
@@ -350,12 +390,16 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def method(a, b) when a == 1 do
             :ok
           end
         end
 
-      assert_same_macro(Compile.replace_method({nil, :not_enabled_feature, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({nil, :not_enabled_feature, nil, call, body}),
+        expected
+      )
     end
 
     test "header and feature on" do
@@ -366,10 +410,11 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def(method(a, b \\ nil), nil)
         end
 
-      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, nil}), expected)
+      assert_same_macro(Compile.replace_method({:enabled_feature, nil, nil, call, nil}), expected)
     end
 
     test "header and feature off" do
@@ -380,10 +425,14 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def(method(a, b \\ nil), nil)
         end
 
-      assert_same_macro(Compile.replace_method({nil, :not_enabled_feature, call, nil}), expected)
+      assert_same_macro(
+        Compile.replace_method({nil, :not_enabled_feature, nil, call, nil}),
+        expected
+      )
     end
 
     test "with defaults" do
@@ -394,12 +443,16 @@ defmodule Features.Ast.CompileTest do
 
       expected =
         quote do
+          @doc nil
           Kernel.def method(a, b \\ nil) do
             :ok
           end
         end
 
-      assert_same_macro(Compile.replace_method({:enabled_feature, nil, call, body}), expected)
+      assert_same_macro(
+        Compile.replace_method({:enabled_feature, nil, nil, call, body}),
+        expected
+      )
     end
   end
 
@@ -421,17 +474,24 @@ defmodule Features.Ast.CompileTest do
 
     expected =
       quote do
-        Kernel.def(method(1, b) when b == 1, do: :ok)
-        Kernel.def(method(3, b) when b == 3, do: :ok)
+        (
+          @doc nil
+          Kernel.def(method(1, b) when b == 1, do: :ok)
+        )
+
+        (
+          @doc nil
+          Kernel.def(method(3, b) when b == 3, do: :ok)
+        )
       end
 
     generated =
       Compile.replace_all(
         {{MyModule, :method, 2},
          [
-           {:enabled_feature, nil, call1, body1},
-           {:not_enabled_feature, nil, call2, body2},
-           {nil, nil, call3, body3}
+           {:enabled_feature, nil, nil, call1, body1},
+           {:not_enabled_feature, nil, nil, call2, body2},
+           {nil, nil, nil, call3, body3}
          ]}
       )
 

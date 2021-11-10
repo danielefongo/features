@@ -18,14 +18,14 @@ defmodule Features.Ast.Runtime do
     end
   end
 
-  def replace_method({feature, feature_off, {:when, _, [{_, _, params}, whn]}, [do: body]}) do
+  def replace_method({feature, feature_off, _, {:when, _, [{_, _, params}, whn]}, [do: body]}) do
     params = method_params(params)
     body = replace_body(body)
 
     method_clause(feature, feature_off, params, whn, body)
   end
 
-  def replace_method({feature, feature_off, {_, _, params}, [do: body]}) do
+  def replace_method({feature, feature_off, _, {_, _, params}, [do: body]}) do
     params = method_params(params)
     body = replace_body(body)
 
@@ -60,10 +60,10 @@ defmodule Features.Ast.Runtime do
 
   # Params
 
-  defp wrapper_params_with_default(module, {_, _, {:when, _, [{_, _, params}, _]}, _}),
+  defp wrapper_params_with_default(module, {_, _, _, {:when, _, [{_, _, params}, _]}, _}),
     do: generate_params_with_default(module, params)
 
-  defp wrapper_params_with_default(module, {_, _, {_, _, params}, _}),
+  defp wrapper_params_with_default(module, {_, _, _, {_, _, params}, _}),
     do: generate_params_with_default(module, params)
 
   defp wrapper_params(_module, 0), do: []
@@ -99,15 +99,15 @@ defmodule Features.Ast.Runtime do
 
   # Assignments
 
-  defp wrapper_assignment({nil, nil, _, _}), do: nil
+  defp wrapper_assignment({nil, nil, _, _, _}), do: nil
 
-  defp wrapper_assignment({feature, nil, _, _}) do
+  defp wrapper_assignment({feature, nil, _, _, _}) do
     quote do
       unquote({feature, [], Elixir}) = Features.Test.enabled?(unquote(feature))
     end
   end
 
-  defp wrapper_assignment({nil, feature_off, _, _}) do
+  defp wrapper_assignment({nil, feature_off, _, _, _}) do
     quote do
       unquote({feature_off, [], Elixir}) = Features.Test.enabled?(unquote(feature_off))
     end
@@ -186,7 +186,7 @@ defmodule Features.Ast.Runtime do
 
   defp remove_header(methods) do
     Enum.filter(methods, fn
-      {_, _, _, nil} -> false
+      {_, _, _, _, nil} -> false
       _ -> true
     end)
   end
