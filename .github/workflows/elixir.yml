@@ -31,26 +31,26 @@ jobs:
         env:
           FEATURES_TEST: true
 
-      # - name: Compile
-      #   run: mix compile
+      - name: Compile
+        run: mix compile
 
-      # - name: Extract mix version
-      #   run: |
-      #     echo ::set-env name=PACKAGE_VERSION::v$(mix version)
-      #     echo ::set-env name=RELEASED_VERSION::$(mix hex.package fetch features 2>/dev/null | cut -f2 -d' ')
-      #   env:
-      #     ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-      #     HEX_API_KEY: ${{secrets.HEXPM_TOKEN}}
+      - name: Extract mix version
+        run: |
+          echo ::set-env name=PACKAGE_VERSION::v$(mix version)
+          echo ::set-env name=RELEASED_VERSION::$(mix hex.package fetch features 2>/dev/null | cut -f2 -d' ')
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+          HEX_API_KEY: ${{secrets.HEXPM_TOKEN}}
 
-      # - name: Publish
-      #   if: env.PACKAGE_VERSION != env.RELEASED_VERSION && github.ref == 'refs/heads/main'
-      #   run: |
-      #     git config user.name ${{ github.event.pusher.name }}
-      #     git config user.email ${{ github.event.pusher.email }}
-      #     git tag --annotate ${PACKAGE_VERSION} --message v${PACKAGE_VERSION}
-      #     git push https://x-access-token:${GIT_TOKEN}@github.com/${GIT_REPO}.git --tags
-      #     mix hex.publish --yes
-      #   env:
-      #     HEX_API_KEY: ${{secrets.HEXPM_TOKEN}}
-      #     GIT_TOKEN: ${{ github.token }}
-      #     GIT_REPO: ${{ github.repository }}
+      - name: Publish
+        if: env.PACKAGE_VERSION != env.RELEASED_VERSION && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name ${{ github.event.pusher.name }}
+          git config user.email ${{ github.event.pusher.email }}
+          mix hex.publish --yes
+          git push https://x-access-token:${GIT_TOKEN}@github.com/${GIT_REPO}.git --tags
+          git tag --annotate ${PACKAGE_VERSION} --message v${PACKAGE_VERSION}
+        env:
+          HEX_API_KEY: ${{secrets.HEXPM_TOKEN}}
+          GIT_TOKEN: ${{ github.token }}
+          GIT_REPO: ${{ github.repository }}
